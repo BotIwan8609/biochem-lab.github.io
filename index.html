@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioChem Explorer Pro</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 260px;
+            background: #1e293b;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .logo {
+            padding: 0 20px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-link {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-link:hover { background: #334155; }
+        .nav-link.active {
+            background: #334155;
+            border-left-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Stopka z autorami */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 20px;
+            background: #0f172a;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            border-top: 1px solid #334155;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .sidebar-footer b {
+            color: var(--accent);
+            font-size: 0.95rem;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 260px;
+            padding: 40px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .card.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;}
+        h3 { color: var(--primary-dark); }
+
+        /* Components */
+        .interactive-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn:hover { background: var(--primary-dark); }
+
+        /* Visualization: Association */
+        #molecule-canvas {
+            background: #fff;
+            border-radius: 8px;
+            width: 100%;
+            height: 150px;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        th { background: #f8fafc; }
+
+        /* Animation: Protein */
+        .egg-box {
+            width: 150px;
+            height: 100px;
+            background: #eee;
+            border-radius: 40% 40% 50% 50%;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            transition: 2s;
+        }
+        .yolk {
+            width: 40px; height: 40px; background: orange;
+            border-radius: 50%; position: absolute; top: 30px; left: 55px;
+        }
+        .white-denat { background: #fff !important; }
+
+        /* Sekcja Ciekawostek */
+        .trivia-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff;
+            border-left: 5px solid var(--warning);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .trivia-icon {
+            font-size: 2.5rem;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        input[type=range] { width: 100%; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <div class="logo">BioChem Lab</div>
+    <div class="nav-link active" onclick="tab(0)">🧬 Budowa & Izomeria</div>
+    <div class="nav-link" onclick="tab(1)">🌡️ Właściwości Fizyczne</div>
+    <div class="nav-link" onclick="tab(2)">🧪 Reakcje Chemiczne</div>
+    <div class="nav-link" onclick="tab(3)">🧠 Wpływ na Organizm</div>
+    <div class="nav-link" onclick="tab(4)">⚖️ Alkohole vs Fenole</div>
+    <div class="nav-link" onclick="tab(5)">💡 Ciekawostki</div>
+    
+    <div class="sidebar-footer">
+        Projekt i realizacja:<br>
+        <b>Mikołaj Bartelak</b><br>
+        <b>Szymon Nagięć</b><br>
+        <span style="display:inline-block; margin-top:5px; border: 1px solid var(--accent); padding: 2px 10px; border-radius: 12px; font-weight:bold; color: white;">Klasa 3R</span>
+    </div>
+</aside>
+
+<main>
+    <div id="t0" class="card active">
+        <h2>Budowa i Izomeria Położenia</h2>
+        <p>Wybierz liczbę atomów węgla, aby zobaczyć wzór i możliwe izomery.</p>
+        <div class="interactive-box">
+            <input type="range" id="c-range" min="1" max="4" value="1" oninput="updateStructure()">
+            <p>Atomy węgla (n): <b id="c-num">1</b></p>
+            <div id="isomer-switch" style="display:none; margin: 10px 0;">
+                <label><input type="radio" name="loc" value="1" checked onchange="updateStructure()"> Propan-1-ol</label>
+                <label><input type="radio" name="loc" value="2" onchange="updateStructure()"> Propan-2-ol</label>
+            </div>
+            <div id="struct-display" style="font-size: 1.2rem; color: var(--primary); font-family: monospace; background: #fff; padding: 15px; border-radius: 5px; text-align: center;">
+                CH₃OH
+            </div>
+        </div>
+        <p><small>Izomeria położenia grupy -OH pojawia się w alkoholach o co najmniej 3 atomach węgla w cząsteczce.</small></p>
+    </div>
+
+    <div id="t1" class="card">
+        <h2>Fizyka: Asocjacja Cząsteczek</h2>
+        <p>Alkohole mają wysokie temperatury wrzenia dzięki <b>wiązaniom wodorowym</b>.</p>
+        <div class="interactive-box">
+            <p>Wizualizacja "sklejania się" cząsteczek (asocjacja):</p>
+            <canvas id="molecule-canvas"></canvas>
+            <button class="btn" style="margin-top: 10px;" onclick="toggleAssociation()">Włącz Wiązania Wodorowe</button>
+        </div>
+        <table>
+            <tr><th>Substancja</th><th>Masa cząsteczkowa</th><th>Temp. Wrzenia</th></tr>
+            <tr><td>Etan (alkan)</td><td>30 u</td><td>-89°C</td></tr>
+            <tr><td>Metanol (alkohol)</td><td>32 u</td><td>65°C</td></tr>
+            <tr><td>Etanol (alkohol)</td><td>46 u</td><td>78°C</td></tr>
+        </table>
+    </div>
+
+    <div id="t2" class="card">
+        <h2>Reakcje: Spalanie i Sód</h2>
+        <div class="interactive-box">
+            <h3>Kalkulator Spalania Etanolu</h3>
+            <select id="comb-type" style="padding: 5px; font-size: 1rem;" onchange="updateCombustion()">
+                <option value="total">Spalanie Całkowite</option>
+                <option value="semi">Półspalanie</option>
+                <option value="none">Spalanie Niecałkowite</option>
+            </select>
+            <p id="comb-eq" style="font-family: monospace; font-size: 1.2rem; padding: 15px; background: #fff; border-radius: 5px; color: var(--primary-dark);"></p>
+        </div>
+        <div class="interactive-box">
+            <h3>Reakcja z Sodem</h3>
+            <button class="btn" onclick="runSodium()">Dodaj sód (Na) do etanolu</button>
+            <p id="sodium-status" style="margin-top: 15px; padding: 10px; background: #fff; border-radius: 5px;">Zlewka z etanolem i fenoloftaleiną...</p>
+        </div>
+    </div>
+
+    <div id="t3" class="card">
+        <h2>Toksykologia: Denaturacja Białek</h2>
+        <p>Etanol powoduje nieodwracalną zmianę struktury białek (np. w organizmie lub w jajku).</p>
+        <div class="interactive-box" style="text-align: center;">
+            <div class="egg-box" id="egg">
+                <div class="yolk"></div>
+            </div>
+            <br>
+            <button class="btn" style="background: var(--danger);" onclick="denaturate()">Wlej Etanol (C₂H₅OH)</button>
+            <p id="denat-text" style="font-weight: bold; margin-top: 15px;">Białko jest przezroczyste i płynne.</p>
+        </div>
+    </div>
+
+    <div id="t4" class="card">
+        <h2>Alkohole vs Fenole</h2>
+        <p>Fenole mają silniejszy charakter kwasowy niż alkohole nasycone.</p>
+        <div class="interactive-box">
+            <h3>Wirtualny Test z FeCl₃ (Chlorek Żelaza III)</h3>
+            <p>Chlorek żelaza(III) to odczynnik pozwalający wykryć fenole.</p>
+            <div style="display: flex; gap: 40px; justify-content: center; align-items: flex-end; height: 120px;">
+                <div style="text-align: center;">
+                    <div id="tube1" style="width: 40px; height: 100px; border: 3px solid #94a3b8; border-top: none; border-radius: 0 0 20px 20px; background: #f8fafc; position: relative;">
+                        <div id="liquid1" style="position: absolute; bottom: 0; width: 100%; height: 60%; background: #e2e8f0; border-radius: 0 0 17px 17px; transition: 1s;"></div>
+                    </div>
+                    <small>Etanol</small>
+                </div>
+                <div style="text-align: center;">
+                    <div id="tube2" style="width: 40px; height: 100px; border: 3px solid #94a3b8; border-top: none; border-radius: 0 0 20px 20px; background: #f8fafc; position: relative;">
+                        <div id="liquid2" style="position: absolute; bottom: 0; width: 100%; height: 60%; background: #e2e8f0; border-radius: 0 0 17px 17px; transition: 1s;"></div>
+                    </div>
+                    <small>Fenol</small>
+                </div>
+            </div>
+            <br>
+            <center><button class="btn" onclick="testPhenol()">Dodaj krople FeCl₃</button></center>
+        </div>
+        <table>
+            <tr><th>Cecha</th><th>Alkohole (np. Etanol)</th><th>Fenole (np. Fenol)</th></tr>
+            <tr><td>Odczyn</td><td>Obojętny</td><td>Słabo kwasowy</td></tr>
+            <tr><td>Reakcja z zasadami (NaOH)</td><td>Nie zachodzi</td><td>Zachodzi (powstają fenolany)</td></tr>
+        </table>
+    </div>
+
+    <div id="t5" class="card">
+        <h2>💡 Ciekawostki Chemiczne</h2>
+        <p>Chemia alkoholi i fenoli otacza nas na co dzień. Oto kilka interesujących faktów!</p>
+
+        <div class="trivia-item">
+            <div class="trivia-icon">🚓</div>
+            <div>
+                <h3>Jak działa policyjny alkomat?</h3>
+                <p>W starszych typach alkomatów (tzw. probierczych) wykorzystywano reakcję chemiczną. Osoba badana dmuchała w rurkę z dichromianem(VI) potasu (K₂Cr₂O₇). Jeśli w wydychanym powietrzu znajdował się etanol, utleniał się on do kwasu octowego, a pomarańczowy dichromian redukował się do związków chromu(III), które są <b>zielone</b>. Zmiana koloru była dowodem na spożycie alkoholu!</p>
+            </div>
+        </div>
+
+        <div class="trivia-item" style="border-left-color: #3b82f6;">
+            <div class="trivia-icon">🏥</div>
+            <div>
+                <h3>Fenol, który zrewolucjonizował medycynę</h3>
+                <p>W XIX wieku operacje często kończyły się śmiercią z powodu zakażeń. Brytyjski chirurg Joseph Lister jako pierwszy zastosował <b>kwas karbolowy (czyli roztwór fenolu)</b> do dezynfekcji narzędzi chirurgicznych, rąk i ran. Śmiertelność spadła drastycznie! Dziś fenolu używa się rzadziej ze względu na jego toksyczność, ale zapoczątkował on erę antyseptyki.</p>
+            </div>
+        </div>
+
+        <div class="trivia-item" style="border-left-color: #ef4444;">
+            <div class="trivia-icon">🌶️</div>
+            <div>
+                <h3>Dlaczego papryczka chili piecze?</h3>
+                <p>Za ostry smak papryczek odpowiada związek o nazwie <b>kapsaicyna</b>. Jeśli spojrzysz na jej wzór strukturalny, zauważysz, że zawiera ona pierścień aromatyczny z połączoną grupą hydroksylową (-OH). Oznacza to, że kapsaicyna, pod kątem budowy chemicznej, należy do grupy fenoli!</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Zarządzanie zakładkami
+    function tab(n) {
+        document.querySelectorAll('.card').forEach((c, i) => {
+            c.classList.toggle('active', i === n);
+        });
+        document.querySelectorAll('.nav-link').forEach((l, i) => {
+            l.classList.toggle('active', i === n);
+        });
+        // Inicjalizacja canvasu tylko jeśli jesteśmy w zakładce Fizyka (index 1)
+        if(n === 1) initCanvas();
+    }
+
+    // TAB 1 logic
+    function updateStructure() {
+        const n = document.getElementById('c-range').value;
+        const loc = document.querySelector('input[name="loc"]:checked').value;
+        document.getElementById('c-num').innerText = n;
+        const sw = document.getElementById('isomer-switch');
+        const disp = document.getElementById('struct-display');
+
+        if(n == 1) disp.innerText = "CH₃OH (Metanol)";
+        else if(n == 2) disp.innerText = "CH₃CH₂OH (Etanol)";
+        else if(n == 3) {
+            sw.style.display = "block";
+            disp.innerText = loc == 1 ? "CH₃CH₂CH₂OH (Propan-1-ol)" : "CH₃CH(OH)CH₃ (Propan-2-ol)";
+        } else {
+            sw.style.display = "none";
+            disp.innerText = "C₄H₉OH (Butanol)";
+        }
+    }
+
+    // TAB 2 logic (Canvas)
+    let isAssoc = false;
+    function initCanvas() {
+        const c = document.getElementById('molecule-canvas');
+        if(!c) return;
+        const ctx = c.getContext('2d');
+        // Zapobiega wielokrotnemu uruchamianiu animacji
+        if(window.canvasLoop) cancelAnimationFrame(window.canvasLoop);
+        
+        let particles = Array.from({length: 8}, () => ({x: Math.random()*200, y: Math.random()*100, vx: Math.random()-0.5, vy: Math.random()-0.5}));
+        
+        function draw() {
+            ctx.clearRect(0,0,c.width,c.height);
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
+                ctx.fillStyle = "#2563eb";
+                ctx.fill();
+                p.x += isAssoc ? p.vx*0.2 : p.vx;
+                p.y += isAssoc ? p.vy*0.2 : p.vy;
+                if(p.x<0 || p.x>c.width) p.vx *= -1;
+                if(p.y<0 || p.y>c.height) p.vy *= -1;
+            });
+            if(isAssoc) {
+                ctx.strokeStyle = "rgba(239, 68, 68, 0.5)";
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i+1; j<particles.length; j++) {
+                        let d = Math.hypot(particles[i].x-particles[j].x, particles[i].y-particles[j].y);
+                        if(d < 50) {
+                            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+                        }
+                    }
+                }
+            }
+            window.canvasLoop = requestAnimationFrame(draw);
+        }
+        draw();
+    }
+    function toggleAssociation() { 
+        isAssoc = !isAssoc; 
+        const btn = document.querySelector('#t1 .btn');
+        btn.innerText = isAssoc ? "Wyłącz Wiązania Wodorowe" : "Włącz Wiązania Wodorowe";
+    }
+
+    // TAB 3 logic
+    function updateCombustion() {
+        const type = document.getElementById('comb-type').value;
+        const eqs = {
+            total: "C₂H₅OH + 3 O₂ → 2 CO₂ + 3 H₂O",
+            semi: "C₂H₅OH + 2 O₂ → 2 CO + 3 H₂O",
+            none: "C₂H₅OH + O₂ → 2 C + 3 H₂O"
+        };
+        document.getElementById('comb-eq').innerText = eqs[type];
+    }
+    updateCombustion();
+
+    function runSodium() {
+        document.getElementById('sodium-status').innerHTML = "<b>Równanie:</b> 2 C₂H₅OH + 2 Na → 2 C₂H₅ONa + H₂↑ <br><br> <span style='color:#db2777; font-weight:bold;'>Fenoloftaleina barwi się na malinowo!</span> Wydziela się gazowy wodór.";
+    }
+
+    // TAB 4 logic
+    function denaturate() {
+        document.getElementById('egg').classList.add('white-denat');
+        document.getElementById('denat-text').innerHTML = "<span style='color: var(--danger);'>Białko uległo denaturacji (ścięło się).</span> Proces ten jest nieodwracalny!";
+    }
+
+    // TAB 5 logic
+    function testPhenol() {
+        // Etanol - brak zmian (zostaje jasny)
+        document.getElementById('liquid1').style.background = "#e2e8f0"; 
+        // Fenol - charakterystyczne fioletowe zabarwienie
+        document.getElementById('liquid2').style.background = "#7e22ce"; 
+    }
+</script>
+
+</body>
+</html>
